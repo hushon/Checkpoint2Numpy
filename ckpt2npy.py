@@ -72,9 +72,9 @@ def checkpoint_to_dictionary(checkpoint_path):
     Returns:
         (dict) a dictionary containing tensor names as keys and numpy arrays as values.
     Example:
-        To load checkpoint V1 formats, pass full path to .ckpt file: 
+        To load checkpoint V1 format, pass full path to .ckpt file: 
             x = checkpoint_to_dictionary('./checkpoint/pix2pix.model-88500.ckpt')
-        To load checkpoint V2 formats, pass path up to prefix of .index/.meta/data files.
+        To load checkpoint V2 format, pass path up to prefix of .index/.meta/data files.
             x = checkpoint_to_dictionary('./checkpoint/pix2pix.model-88500')
     '''
 
@@ -102,19 +102,19 @@ def main():
         checkpoint_path = os.path.splitext(checkpoint_path)[0]
 
     # read checkpoint file
-    vars_dict = checkpoint_to_dictionary(checkpoint_path)
+    tensor_dict = checkpoint_to_dictionary(checkpoint_path)
 
     # print summary about tensors
-    print('Number of tensors found: {}'.format(len(vars_dict)))
+    print('Number of tensors found: {}'.format(len(tensor_dict)))
     print('| Tensor Name | Shape | DType |')
     print('=======')
-    for name, tensor in vars_dict.items():
+    for name, tensor in tensor_dict.items():
         print('| {} | {} | {} |'.format(name, tensor.shape, tensor.dtype))
 
     # save npy file and metadata
     metadata = []
 
-    for name, tensor in vars_dict.items():
+    for name, tensor in tensor_dict.items():
 
         filename = name[:].replace('/', '_') + '.npy'
         np.save(os.path.join(save_dir, filename), tensor)
