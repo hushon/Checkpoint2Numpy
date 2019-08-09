@@ -1,7 +1,17 @@
 '''
 Checkpoint To Numpy
 
-This script extracts numpy arrays from a TensorFlow checkpoint file.
+Extract numpy arrays from a TensorFlow checkpoint file.
+
+
+Usage: ckpt2npy.py [-h] [--dest DEST] checkpoint_path
+
+    positional arguments:
+        checkpoint_path  Checkpoint file to extract arrays
+
+    optional arguments:
+        -h, --help       show this help message and exit
+        --dest DEST      Directory to save exported files
 
 Requirements: 
     Python 3
@@ -19,9 +29,9 @@ About exported files:
     JSON file contains list of metadata; such as tensor names and checksum.
 '''
 
+import argparse
 import os
 import json
-from tkinter import Tk, filedialog
 import hashlib
 
 import numpy as np
@@ -85,17 +95,13 @@ def checkpoint_to_dictionary(checkpoint_path):
 
     return tensor_dict
 
-def main():
+def main(args):
 
-    root = Tk()
-    checkpoint_path = filedialog.askopenfilename(title='Select checkpoint file', filetypes = (("index files","*.index"),("ckpt files","*.ckpt"),("all files","*.*")))
-    checkpoint_path = os.path.normpath(checkpoint_path)
-    root.withdraw()
+    checkpoint_path = os.path.normpath(args.checkpoint_path)
+    save_dir = os.path.normpath(args.dest)
 
-    root = Tk()
-    save_dir = filedialog.askdirectory(title='Export NumPy binaries to...')
-    save_dir = os.path.normpath(save_dir)
-    root.withdraw()
+    if not os.path.exists(save_dir):
+        os.mkdir(save_dir)
 
     # if checkpoint V2 format, remove file extension
     if os.path.splitext(checkpoint_path)[1] in ['.index', '.meta', '.data']:
@@ -130,4 +136,12 @@ def main():
     save_as_json(os.path.join(save_dir, metadata_filename), metadata)
 
 if __name__ == '__main__':
-    main()
+
+    parser = argparse.ArgumentParser(description='Export TensorFlow checkpoint to numpy arrays.')
+    parser.add_argument('checkpoint_path', metavar='checkpoint_path', type=str, 
+                       help='Checkpoint file to extract arrays')
+    parser.add_argument('--dest', dest='dest', type=str, default='./',
+                       help='Directory to save exported files')
+    args = parser.parse_args()
+
+    main(args)
