@@ -52,7 +52,13 @@ def read_json(path):
     return data
 
 def md5_checksum(path):
-    '''calculates MD5 checksum of given file'''
+    '''
+    calculates MD5 checksum of given file
+    Args:
+        path (str): path to target file
+    Returns: 
+        checksum (str): a md5 checksum string
+    '''
 
     with open(path, 'rb') as file:
         checksum = hashlib.md5(file.read()).hexdigest()
