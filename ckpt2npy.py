@@ -140,7 +140,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description='Export TensorFlow checkpoint to numpy arrays.')
     parser.add_argument('checkpoint_path', metavar='checkpoint_path', type=str, 
                        help='Checkpoint file to extract arrays')
-    parser.add_argument('--dest', dest='dest', type=str, default='./',
+    parser.add_argument('--dest', dest='dest', type=str, default='./output',
                        help='Directory to save exported files')
     args = parser.parse_args()
 
