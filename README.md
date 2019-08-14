@@ -1,6 +1,6 @@
 # Checkpoint2Numpy
-Extract tensors from TensorFlow checkpoint file. 
-A checkpoint file is a serialized data containing weight matrices and their node names. 
+Extract tensors from TensorFlow checkpoint file.  
+A checkpoint file is a serialized data containing weight matrices and their node names.  
 This utility will read a checkpoint file and export them to individual `.npy` files, 
 along with a `.json` text file that contains metadata such as node names and checksums.
 
