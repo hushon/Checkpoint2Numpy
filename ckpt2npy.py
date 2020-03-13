@@ -13,7 +13,7 @@ Usage: ckpt2npy.py [-h] [--dest DEST] checkpoint_path
         -h, --help       show this help message and exit
         --dest DEST      Directory to save exported files
 
-Requirements: 
+Requirements:
     Python 3
     TensorFlow
     NumPy
@@ -23,7 +23,7 @@ Supported checkpoint formats:
     For V1 format, select .ckpt file.
     For V2 format, select .index/.meta/.data file.
 
-About exported files: 
+About exported files:
     Tensors are exported as .npy files.
     You can read the binary with NumPy.
     JSON file contains list of metadata; such as tensor names and checksum.
@@ -37,6 +37,11 @@ import hashlib
 import numpy as np
 import tensorflow as tf
 
+try:
+    from tensorflow.train import NewCheckpointReader
+except:
+    from tensorflow.compat.v1.train import NewCheckpointReader
+
 def save_as_json(path, data):
     '''
     Save data as JSON file format
@@ -44,7 +49,7 @@ def save_as_json(path, data):
         path (str): directory and filename to .json file
         data (dict): dictionary-type data to be written into json
     '''
-    if not os.path.exists(os.path.dirname(path)): 
+    if not os.path.exists(os.path.dirname(path)):
         os.mkdir(os.path.dirname(path))
 
     with open(path, 'w', encoding='utf-8') as outfile:
@@ -66,7 +71,7 @@ def md5_checksum(path):
     calculates MD5 checksum of given file
     Args:
         path (str): path to target file
-    Returns: 
+    Returns:
         checksum (str): a md5 checksum string
     '''
 
@@ -82,13 +87,13 @@ def checkpoint_to_dictionary(checkpoint_path):
     Returns:
         (dict) a dictionary containing tensor names as keys and numpy arrays as values.
     Example:
-        To load checkpoint V1 format, pass full path to .ckpt file: 
+        To load checkpoint V1 format, pass full path to .ckpt file:
             x = checkpoint_to_dictionary('./checkpoint/pix2pix.model-88500.ckpt')
         To load checkpoint V2 format, pass path up to prefix of .index/.meta/data files.
             x = checkpoint_to_dictionary('./checkpoint/pix2pix.model-88500')
     '''
 
-    reader = tf.train.NewCheckpointReader(checkpoint_path)
+    reader = NewCheckpointReader(checkpoint_path)
     var_to_shape_map = sorted(reader.get_variable_to_shape_map())
 
     tensor_dict = {name:reader.get_tensor(name) for name in var_to_shape_map}
@@ -110,35 +115,33 @@ def main(args):
     # read checkpoint file
     tensor_dict = checkpoint_to_dictionary(checkpoint_path)
 
-    # print summary about tensors
-    print('Number of tensors found: {}'.format(len(tensor_dict)))
-    print('| Tensor Name | Shape | DType |')
+    # iterate through tensors
+    print(f'Found {len(tensor_dict)} tensors.')
+    print('| Name | Shape | DType |')
     print('=======')
-    for name, tensor in tensor_dict.items():
-        print('| {} | {} | {} |'.format(name, tensor.shape, tensor.dtype))
 
-    # save npy file and metadata
     metadata = []
+    metadata_filename = os.path.basename(checkpoint_path)+'_metadata.json'
 
     for name, tensor in tensor_dict.items():
-
         filename = name[:].replace('/', '_') + '.npy'
-        np.save(os.path.join(save_dir, filename), tensor)
+        tensor = np.array(tensor)
+
+        print(f'| {name} | {tensor.shape} | {tensor.dtype} |')
 
         metadata.append(
             {
-            'tensor_name': name, 
-            'filename': filename, 
+            'tensor_name': name,
+            'filename': filename,
             'md5_checksum': md5_checksum(os.path.join(save_dir, filename))
             })
-
-    metadata_filename = os.path.basename(checkpoint_path)+'_metadata.json'
+        np.save(os.path.join(save_dir, filename), tensor)
     save_as_json(os.path.join(save_dir, metadata_filename), metadata)
 
 if __name__ == '__main__':
 
     parser = argparse.ArgumentParser(description='Export TensorFlow checkpoint to numpy arrays.')
-    parser.add_argument('checkpoint_path', metavar='checkpoint_path', type=str, 
+    parser.add_argument('checkpoint_path', metavar='checkpoint_path', type=str,
                        help='Checkpoint file to extract arrays')
     parser.add_argument('--dest', dest='dest', type=str, default='./output',
                        help='Directory to save exported files')
