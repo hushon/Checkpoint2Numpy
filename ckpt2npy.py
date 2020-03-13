@@ -38,8 +38,10 @@ import numpy as np
 import tensorflow as tf
 
 try:
+    # for tensorflow 1.x version
     from tensorflow.train import NewCheckpointReader
 except:
+    # for tensorflow 2.x version
     from tensorflow.compat.v1.train import NewCheckpointReader
 
 def save_as_json(path, data):
