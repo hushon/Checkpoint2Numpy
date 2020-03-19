@@ -15,7 +15,7 @@ Usage: ckpt2npy.py [-h] [--dest DEST] checkpoint_path
 
 Requirements:
     Python 3
-    TensorFlow
+    TensorFlow 1.x or 2.x
     NumPy
 
 Supported checkpoint formats:
@@ -33,9 +33,7 @@ import argparse
 import os
 import json
 import hashlib
-
 import numpy as np
-import tensorflow as tf
 
 try:
     # for tensorflow 1.x version
@@ -44,7 +42,7 @@ except:
     # for tensorflow 2.x version
     from tensorflow.compat.v1.train import NewCheckpointReader
 
-def save_as_json(path, data):
+def save_as_json(path: str, data: dict):
     '''
     Save data as JSON file format
     Args:
@@ -58,7 +56,7 @@ def save_as_json(path, data):
         json.dump(data, outfile, ensure_ascii=False, indent=4)
     print('Saved as {}'.format(path))
 
-def read_json(path):
+def read_json(path: str):
     '''
     Read JSON file
     Args:
@@ -68,7 +66,7 @@ def read_json(path):
         data = json.load(file)
     return data
 
-def md5_checksum(path):
+def md5_checksum(path: str) -> str:
     '''
     calculates MD5 checksum of given file
     Args:
@@ -81,7 +79,7 @@ def md5_checksum(path):
         checksum = hashlib.md5(file.read()).hexdigest()
     return checksum
 
-def checkpoint_to_dictionary(checkpoint_path):
+def checkpoint_to_dictionary(checkpoint_path: str) -> dict:
     '''
     read checkpoint file and return weights as dictionary.
     Args:
@@ -94,12 +92,16 @@ def checkpoint_to_dictionary(checkpoint_path):
         To load checkpoint V2 format, pass path up to prefix of .index/.meta/data files.
             x = checkpoint_to_dictionary('./checkpoint/pix2pix.model-88500')
     '''
+    _, extension = os.path.splitext(os.path.basename(checkpoint_path))
+    assert extension in ('.ckpt', '.index', '.index', '.meta', '.data')
+
+    # if checkpoint v2 format, remove file extension
+    if extension in ('.index', '.meta', '.data'):
+        checkpoint_path, _ = os.path.splitext(checkpoint_path)
 
     reader = NewCheckpointReader(checkpoint_path)
-    var_to_shape_map = sorted(reader.get_variable_to_shape_map())
-
+    var_to_shape_map = reader.get_variable_to_shape_map()
     tensor_dict = {name:reader.get_tensor(name) for name in var_to_shape_map}
-
     return tensor_dict
 
 def main(args):
@@ -110,10 +112,6 @@ def main(args):
     if not os.path.exists(save_dir):
         os.mkdir(save_dir)
 
-    # if checkpoint V2 format, remove file extension
-    if os.path.splitext(checkpoint_path)[1] in ['.index', '.meta', '.data']:
-        checkpoint_path = os.path.splitext(checkpoint_path)[0]
-
     # read checkpoint file
     tensor_dict = checkpoint_to_dictionary(checkpoint_path)
 
@@ -121,24 +119,30 @@ def main(args):
     print(f'Found {len(tensor_dict)} tensors.')
     print('| Name | Shape | DType |')
     print('=======')
-
-    metadata = []
-    metadata_filename = os.path.basename(checkpoint_path)+'_metadata.json'
-
     for name, tensor in tensor_dict.items():
-        filename = name[:].replace('/', '_') + '.npy'
         tensor = np.array(tensor)
-
         print(f'| {name} | {tensor.shape} | {tensor.dtype} |')
 
-        metadata.append(
-            {
-            'tensor_name': name,
-            'filename': filename,
-            'md5_checksum': md5_checksum(os.path.join(save_dir, filename))
-            })
-        np.save(os.path.join(save_dir, filename), tensor)
-    save_as_json(os.path.join(save_dir, metadata_filename), metadata)
+    # metadata = []
+    # metadata_filename = os.path.basename(checkpoint_path)+'_metadata.json'
+
+    # for name, tensor in tensor_dict.items():
+    #     filename = name[:].replace('/', '_') + '.npy'
+    #     tensor = np.array(tensor)
+
+    #     print(f'| {name} | {tensor.shape} | {tensor.dtype} |')
+
+    #     metadata.append(
+    #         {
+    #         'tensor_name': name,
+    #         'filename': filename,
+    #         'md5_checksum': md5_checksum(os.path.join(save_dir, filename))
+    #         })
+    #     np.save(os.path.join(save_dir, filename), tensor)
+    # save_as_json(os.path.join(save_dir, metadata_filename), metadata)
+
+    filename, _ = os.path.splitext(os.path.basename(checkpoint_path))
+    np.save(os.path.join(save_dir, filename), tensor_dict)
 
 if __name__ == '__main__':
 
